@@ -8,6 +8,7 @@ import { moduleW2LocalWidth, moduleX2LocalX, moduleY2LocalY } from "../helpers";
 
 type ModuleProps = {
   data: ModuleInterface;
+  index: number,
   findCard: (id: number) => { module: ModuleInterface; index: number };
 };
 
@@ -17,6 +18,7 @@ const Module = (props: ModuleProps) => {
       id,
       coord: { x, y, w, h },
     },
+    index,
     findCard,
   } = props;
 
@@ -44,9 +46,7 @@ const Module = (props: ModuleProps) => {
     });
   }, false);
 
-  // I added this
   const originalIndex = findCard(id).index;
-
   // Wire the module to DnD drag system
   const [, drag] = useDrag(
     () => ({
@@ -59,6 +59,8 @@ const Module = (props: ModuleProps) => {
         start();
         return {
           id,
+          top,
+          left,
           originalIndex,
         };
       },

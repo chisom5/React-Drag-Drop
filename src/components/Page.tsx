@@ -6,9 +6,11 @@ import Grid from "./Grid";
 import Module from "./Module";
 import { GUTTER_SIZE } from "../constants";
 import ModuleInterface from "../types/ModuleInterface";
+import update from "immutability-helper";
+import { moduleY2LocalY, moduleX2LocalX } from "../helpers";
 
 const Page = () => {
-  const [modules] = React.useState([
+  const [modules, setModules] = React.useState([
     { id: 1, coord: { x: 1, y: 80, w: 2, h: 200 } },
     { id: 2, coord: { x: 5, y: 0, w: 3, h: 100 } },
     { id: 3, coord: { x: 4, y: 310, w: 3, h: 200 } },
@@ -30,11 +32,59 @@ const Page = () => {
     },
     [modules]
   );
-// down to here
+
+  const moveBox = React.useCallback(
+    (index: number, left: number, top: number) => {
+      setModules(
+        update(modules, {
+          [index]: {
+            coord: {
+              $merge: { x: left, y: top },
+            },
+          },
+        })
+      );
+    },
+    [modules]
+  );
+
+  // down to here
 
   // Wire the module to DnD drag system
-  const [, drop] = useDrop({
+  const [{ canDrop, isOverCurrent }, drop] = useDrop({
     accept: "module",
+
+    canDrop: () => true,
+
+    hover: (item: {
+      id: number;
+      originalIndex: number;
+      left: number;
+      top: number;
+    }) => {
+      if (!containerRef.current) {
+        return;
+      }
+      let boundingRect = containerRef.current.getBoundingClientRect();
+
+      // LocalY2moduleY(boundingRect.height)
+      let y = moduleY2LocalY(item.top);
+      let x = moduleX2LocalX(item.left);
+
+      const dragId = item.id;
+      console.log(y, x, monitor.getClientOffset(), "ewkmon");
+      // Don't replace items with themselves
+      // if (dragId  === hoverIndex) {
+      //   return;
+      // }
+      // console.log(dragId , hoverIndex, "nnnn");
+      // If it is dragged around other module, then move the module and set the state with position changes
+      moveBox(item.originalIndex, item.left, y);
+    },
+    collect: (monitor) => ({
+      canDrop: monitor.canDrop(),
+      isOverCurrent: monitor.isOver({ shallow: true }),
+    }),
   });
 
   drop(containerRef);
@@ -61,8 +111,8 @@ const Page = () => {
       }}
     >
       <Grid height={containerHeight} />
-      {modules.map((module) => (
-        <Module key={module.id} data={module} findCard={findCard} />
+      {modules.map((module, i) => (
+        <Module key={module.id} data={module} index ={i} findCard={findCard} />
       ))}
     </Box>
   );
